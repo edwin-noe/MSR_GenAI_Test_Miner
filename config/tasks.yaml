@@ -1,0 +1,9 @@
+repository_discovery:
+  description: Search GitHub using keywords and filters
+  expected_output: List of repositories
+  agent: GitHubExplorer
+
+qualitative_screening:
+  description: Analyze repository information and validate relevance
+  expected_output: Final validated repository list
+  agent: TestAnalyst
