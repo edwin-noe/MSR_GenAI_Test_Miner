@@ -10,7 +10,7 @@ import time
 import base64
 from typing import Dict, Any, Optional, List
 from tenacity import retry, wait_exponential, stop_after_attempt
-from .config import GITHUB_TOKEN, AI_LIBRARIES, INTERSECTION_PHRASES, REPO_FILES_TO_CHECK
+from .config import GITHUB_TOKEN, AI_LIBRARIES, INTERSECTION_PHRASES, REPO_FILES_TO_CHECK, GENAI_KEYWORDS
 
 
 class RepoEnricher:
