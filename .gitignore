@@ -5,9 +5,24 @@ __pycache__/
 *.pyd
 *.env
 .venv/
+venv/
+env/
 
 # Output
 output/
+*.csv
+*.json
 
 # Docker
 *.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
