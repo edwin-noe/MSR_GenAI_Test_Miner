@@ -89,16 +89,21 @@ class MinerApp:
         
         df = pd.DataFrame(self.all_results)
         
-        # Deduplicate by full_name (repo identifier)
-        df = df.drop_duplicates(subset="full_name", keep="first")
-        
-        # Sort by quality score (if available) and stars
+        # Sort by quality score (if available) and stars before deduplication
+        # This ensures we keep the best occurrence of each repository
         sort_cols = []
         if "quality_score" in df.columns:
             sort_cols.append("quality_score")
         if "stars" in df.columns:
             sort_cols.append("stars")
         
+        if sort_cols:
+            df = df.sort_values(by=sort_cols, ascending=False)
+        
+        # Deduplicate by full_name, keeping the best (first after sorting)
+        df = df.drop_duplicates(subset="full_name", keep="first")
+        
+        # Re-sort for output consistency
         if sort_cols:
             df = df.sort_values(by=sort_cols, ascending=False)
         

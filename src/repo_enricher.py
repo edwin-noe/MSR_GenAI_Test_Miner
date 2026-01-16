@@ -330,14 +330,23 @@ class RepoEnricher:
         return count
     
     def _estimate_commit_count(self, base_url: str) -> int:
-        """Estimate total commit count."""
+        """
+        Estimate total commit count.
+        
+        Note: This is a rough estimate as GitHub API doesn't directly provide
+        total commit count without paginating through all commits.
+        For repositories with > 100 commits, this will underestimate.
+        
+        Future enhancement: Implement pagination for accurate count.
+        """
         commits_url = f"{base_url}/commits"
-        # Try to get commits from last year as a proxy
+        # Get first page to estimate
         commits = self._api_get(commits_url, params={"per_page": 100})
         if commits:
-            # This is a rough estimate; GitHub API doesn't directly provide total count
+            # This is a rough estimate - returning length of first page
             # For better accuracy, would need to paginate through all commits
-            return len(commits) if len(commits) < 100 else 100  # Minimum estimate
+            # which is expensive (1 API call per 100 commits)
+            return len(commits) if len(commits) < 100 else 100  # Conservative minimum estimate
         return 0
     
     def _get_top_languages(self, languages: Dict[str, int], top_n: int = 3) -> List[str]:

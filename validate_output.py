@@ -11,6 +11,10 @@ import pandas as pd
 import json
 from typing import Dict, List, Any
 
+# Import MIN_STARS constant for consistency
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.repo_filter import RepoFilter
+
 
 def load_results(output_file: str = "output/validated_repos.csv") -> pd.DataFrame:
     """Load results from CSV file."""
@@ -94,9 +98,9 @@ def validate_data_quality(df: pd.DataFrame) -> List[str]:
     
     # Check star counts are reasonable
     if "stars" in df.columns:
-        low_stars = df[df["stars"] < 50]
+        low_stars = df[df["stars"] < RepoFilter.MIN_STARS]
         if not low_stars.empty:
-            issues.append(f"Found {len(low_stars)} repos with < 50 stars (below threshold)")
+            issues.append(f"Found {len(low_stars)} repos with < {RepoFilter.MIN_STARS} stars (below threshold)")
     
     # Check for missing descriptions
     if "description" in df.columns:

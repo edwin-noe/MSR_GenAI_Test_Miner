@@ -4,12 +4,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+# Validate token is present (allow missing during test imports)
 if not GITHUB_TOKEN:
-    # Only raise exception if actually trying to use the API, not during tests
     import sys
+    # Only raise exception if not in test context
     if "pytest" not in sys.modules and "unittest" not in sys.modules:
-        # Allow missing token during test import
-        pass
+        # Check if we're actually trying to use the miner (not just importing)
+        if any(arg in sys.argv for arg in ["src.main", "-m", "miner_app"]):
+            raise Exception("GITHUB_TOKEN not found! Add it to your .env file.")
 
 GITHUB_API_URL = "https://api.github.com/search/repositories"
 OUTPUT_FILE = "output/validated_repos.csv"
