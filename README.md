@@ -323,7 +323,7 @@ If you use this tool in academic research, please cite:
 
 ## License
 
-[Add your license here]
+
 
 ## Documentation
 
