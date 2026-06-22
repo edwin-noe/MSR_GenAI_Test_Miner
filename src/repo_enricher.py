@@ -87,7 +87,7 @@ class RepoEnricher:
         if response.status_code == 403:
             reset_time = int(response.headers.get("X-RateLimit-Reset", time.time()))
             sleep_seconds = max(reset_time - time.time(), 5)
-            print(f"⚠️ Rate limit hit, sleeping {sleep_seconds:. 1f}s...")
+            print(f"⚠️ Rate limit hit, sleeping {sleep_seconds:.1f}s...")
             time.sleep(sleep_seconds)
             raise Exception("Rate limit hit, retrying...")
 
@@ -334,11 +334,11 @@ class RepoEnricher:
     def _has_ci_config(self, repo_full_name: str) -> bool:
         """Check for CI/CD configuration files."""
         ci_files = [
-            ". github/workflows",
-            ". gitlab-ci.yml",
-            ". travis.yml",
+            ".github/workflows",
+            ".gitlab-ci.yml",
+            ".travis.yml",
             "circle.yml",
-            ". circleci/config.yml",
+            ".circleci/config.yml",
             "Jenkinsfile",
             "azure-pipelines.yml"
         ]
@@ -370,25 +370,37 @@ class RepoEnricher:
             count += text_lower.count(keyword. lower())
         return count
 
-    def _estimate_commit_count(self, base_url:  str) -> int:
+    def _estimate_commit_count(self, base_url: str) -> int:
         """
-        Estimate total commit count.
+        Return total commit count via the Link-header pagination trick.
 
-        Note: This is a rough estimate as GitHub API doesn't directly provide
-        total commit count without paginating through all commits.
-        For repositories with > 100 commits, this will underestimate.
+        Requests per_page=1 (only 1 commit transferred). GitHub includes a
+        Link header with rel="last" whose page parameter equals the total
+        commit count.  One API call, exact result.
 
-        Future enhancement:  Implement pagination for accurate count.
+        Falls back to fetching the first 100 commits when the Link header is
+        absent (repo has ≤ 1 commit or the default branch has no history yet).
         """
+        import re
         commits_url = f"{base_url}/commits"
-        # Get first page to estimate
-        commits = self._api_get(commits_url, params={"per_page": 100})
-        if commits:
-            # This is a rough estimate - returning length of first page
-            # For better accuracy, would need to paginate through all commits
-            # which is expensive (1 API call per 100 commits)
-            return len(commits) if len(commits) < 100 else 100  # Conservative minimum estimate
-        return 0
+        response = requests.get(
+            commits_url,
+            headers=self.headers,
+            params={"per_page": 1}
+        )
+        if response.status_code != 200:
+            return 0
+
+        link_header = response.headers.get("Link", "")
+        if link_header:
+            # Link: <https://...?per_page=1&page=N>; rel="last"
+            match = re.search(r'[?&]page=(\d+)>;\s*rel="last"', link_header)
+            if match:
+                return int(match.group(1))
+
+        # Fallback: repo has very few commits — count from response body
+        items = response.json()
+        return len(items) if isinstance(items, list) else 0
 
     def _get_top_languages(self, languages: Dict[str, int], top_n: int = 3) -> List[str]:
         """Get top N languages by bytes of code."""

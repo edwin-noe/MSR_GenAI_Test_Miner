@@ -48,7 +48,11 @@ class RepoFilter:
         # Check if archived (archived repos are not actively maintained)
         if repo.get("archived", False):
             return False
-        
+
+        # Exclude forks — we want original repositories only
+        if repo.get("fork", False):
+            return False
+
         return True
     
     @staticmethod

@@ -147,5 +147,42 @@ class TestRepoEnricher(unittest.TestCase):
         self.assertIn("has_license", enriched)
 
 
+    @patch('src.repo_enricher.requests.get')
+    def test_estimate_commit_count_link_header(self, mock_get):
+        """Link-header path returns exact count from rel="last" page number."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {
+            "Link": '<https://api.github.com/repos/x/y/commits?per_page=1&page=847>; rel="last"'
+        }
+        mock_response.json.return_value = [{"sha": "abc"}]
+        mock_get.return_value = mock_response
+
+        count = self.enricher._estimate_commit_count("https://api.github.com/repos/x/y")
+        self.assertEqual(count, 847)
+
+    @patch('src.repo_enricher.requests.get')
+    def test_estimate_commit_count_no_link_header(self, mock_get):
+        """Fallback path counts items from response body when Link header absent."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_response.json.return_value = [{"sha": "abc"}, {"sha": "def"}]
+        mock_get.return_value = mock_response
+
+        count = self.enricher._estimate_commit_count("https://api.github.com/repos/x/y")
+        self.assertEqual(count, 2)
+
+    @patch('src.repo_enricher.requests.get')
+    def test_estimate_commit_count_api_error(self, mock_get):
+        """Returns 0 on non-200 response."""
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_get.return_value = mock_response
+
+        count = self.enricher._estimate_commit_count("https://api.github.com/repos/x/y")
+        self.assertEqual(count, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
