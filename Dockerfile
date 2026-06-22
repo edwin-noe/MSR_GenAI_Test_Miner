@@ -12,10 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the source code
 COPY src/ ./src/
-COPY .env ./
 
-# Expose output directory
-VOLUME ["/app/output"]
+# output/ is written at runtime; attach a Railway Volume at /app/output to persist results
+RUN mkdir -p /app/output
 
 # Run the app
 CMD ["python", "-m", "src.main"]
