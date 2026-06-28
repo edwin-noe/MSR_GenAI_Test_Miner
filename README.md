@@ -136,6 +136,43 @@ python -m src.main --simple
 python -m src.main --check-rate-limit
 ```
 
+## Running on Railway (job dispatcher)
+
+Deploying the service **does not auto-run any job**. The container idles until you
+explicitly select a job, so simply re-deploying or waking the service will *not*
+re-launch a long mining run. A completion sentinel in the output volume also
+prevents a restart from re-running a job that already finished.
+
+Select a job with the `RUN_JOB` environment variable (Railway → service → Variables),
+then deploy/restart:
+
+| `RUN_JOB` value  | Runs |
+|------------------|------|
+| _unset_ / `idle` | nothing — container idles, ready to inspect |
+| `mine`           | `python -m src.main` (Phase 1 mining) |
+| `phase2`         | Phase 2 validation **+ Stage B** README language gate |
+| `phase2-stage-a` | Phase 2 validation, Stage A only (no API calls) |
+
+Other variables:
+- `GITHUB_TOKEN` — required for `mine` and `phase2` (Stage B). **Never commit it.**
+- `FORCE_RERUN=1` — re-run a job whose completion sentinel already exists.
+- `PHASE1_CSV` — Phase 2 input (default `output/validated_repos.csv`, the miner's output).
+- `PHASE2_DIR` — Phase 2 output dir (default `output/phase2`).
+
+**Rate limits are waited out, not failed.** When GitHub's quota is exhausted, both
+the miner and the Phase 2 Stage B fetcher sleep until the limit resets and then
+retry, so long jobs survive quota exhaustion unattended.
+
+Attach a Railway **Volume** at `/app/output` so results (and the resume
+checkpoints) persist across restarts.
+
+### Phase 2 validation locally
+
+```bash
+python scripts/phase2_validation.py            # Stage A only (no token needed)
+python scripts/phase2_validation.py --stage-b  # + README language gate (needs GITHUB_TOKEN)
+```
+
 ## Output Files
 
 All outputs are saved to the `output/` directory:

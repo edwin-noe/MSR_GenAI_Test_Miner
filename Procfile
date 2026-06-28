@@ -1,1 +1,1 @@
-worker: python -m src.main
+worker: bash entrypoint.sh

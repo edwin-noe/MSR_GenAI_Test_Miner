@@ -10,11 +10,15 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the source code
+# Copy the source code and runner scripts
 COPY src/ ./src/
+COPY scripts/ ./scripts/
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 # output/ is written at runtime; attach a Railway Volume at /app/output to persist results
 RUN mkdir -p /app/output
 
-# Run the app
-CMD ["python", "-m", "src.main"]
+# Deploying does NOT auto-run a job. The entrypoint idles until RUN_JOB is set
+# (mine | phase2 | phase2-stage-a). See entrypoint.sh and README.
+CMD ["bash", "entrypoint.sh"]

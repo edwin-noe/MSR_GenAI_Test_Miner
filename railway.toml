@@ -1,6 +1,9 @@
 [build]
-builder = "nixpacks"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "python -m src.main"
-restartPolicyType = "never"
+# Deploying does NOT auto-run a job. The entrypoint idles until you set the
+# RUN_JOB variable (mine | phase2 | phase2-stage-a) and redeploy/restart.
+startCommand = "bash entrypoint.sh"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
