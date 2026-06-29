@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the source code and runner scripts
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+COPY run.py ./run.py
 COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 

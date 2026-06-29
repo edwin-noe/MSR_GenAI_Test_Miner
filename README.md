@@ -136,12 +136,36 @@ python -m src.main --simple
 python -m src.main --check-rate-limit
 ```
 
-## Running on Railway (job dispatcher)
+## Running on Railway
 
-Deploying the service **does not auto-run any job**. The container idles until you
-explicitly select a job, so simply re-deploying or waking the service will *not*
-re-launch a long mining run. A completion sentinel in the output volume also
-prevents a restart from re-running a job that already finished.
+Deploying the service **does not auto-run any job** — the container just idles.
+So you can redeploy purely to wake the server, then run a job manually.
+
+### Manual run (recommended)
+
+Leave `RUN_JOB` unset. Redeploy to wake the container, open a shell, and run:
+
+```bash
+python run.py phase2          # Phase 2 validation + Stage B (README language gate)
+python run.py mine            # Phase 1 mining
+python run.py phase2-stage-a  # Phase 2 Stage A only (no API)
+```
+
+For a long job that should survive your shell disconnecting, run it detached:
+
+```bash
+nohup python run.py phase2 > output/phase2_run.log 2>&1 &
+tail -f output/phase2_run.log
+```
+
+**Do not redeploy while a manual job is running** — a redeploy restarts the
+container and kills the job (it resumes from its checkpoint if relaunched).
+
+### Unattended run via RUN_JOB (survives restarts)
+
+Alternatively, run the job as the container's main process so it survives
+restarts. A completion sentinel in the output volume prevents a redeploy from
+re-running a job that already finished.
 
 Select a job with the `RUN_JOB` environment variable (Railway → service → Variables),
 then deploy/restart:
