@@ -362,9 +362,21 @@ If you use this tool in academic research, please cite:
 
 
 
+## Deployment on a VPS
+
+The full mining cycle takes **8–24 hours**. See the dedicated guide for server recommendations, budget estimates, and step-by-step instructions:
+
+🖥️ **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+Quick summary:
+- A **$6–$12/month** VPS (e.g., DigitalOcean, Linode, Hetzner) is sufficient.
+- 1–2 vCPUs and 2 GB RAM are recommended.
+- Use Docker or `tmux` + the included `run_with_auto_resume.sh` script for unattended execution.
+
 ## Documentation
 
 - 📘 [Methodology & Academic Documentation](METHODOLOGY.md)
+- 🖥️ [VPS Deployment Guide](DEPLOYMENT.md)
 - 📙 [GitHub REST API](https://docs.github.com/en/rest)
 - 📕 [GitHub Search Syntax](https://docs.github.com/en/search-github/searching-on-github)
 

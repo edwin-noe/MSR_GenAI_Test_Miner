@@ -3,7 +3,7 @@
 # Auto-resume script for MSR GenAI Test Miner
 # Automatically waits when rate limit is hit, then resumes
 
-LOGFILE="output/mining_output. log"
+LOGFILE="output/mining_output.log"
 RATE_CHECK_INTERVAL=300  # Check rate limit every 5 minutes
 WAIT_TIME=1800  # Wait 30 minutes (1800 seconds) when exhausted
 
@@ -15,7 +15,7 @@ echo "Log file: $LOGFILE"
 echo ""
 
 # Load environment
-source . venv/bin/activate
+source .venv/bin/activate
 
 # Function to check rate limit
 check_rate_limit() {
