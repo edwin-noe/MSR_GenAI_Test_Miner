@@ -2,8 +2,10 @@
 builder = "dockerfile"
 
 [deploy]
-# Deploying does NOT auto-run a job. The entrypoint idles until you set the
-# RUN_JOB variable (mine | phase2 | phase2-stage-a) and redeploy/restart.
+# Deploying does NOT auto-run a job unless RUN_JOB is set. With RUN_JOB set, the
+# job runs as the main process and resumes from its checkpoint after any restart;
+# the per-job completion sentinel prevents re-running a finished job. "always" is
+# safe here because of that sentinel — a recycled container resumes an in-progress
+# job or idles if the job already completed.
 startCommand = "bash entrypoint.sh"
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
+restartPolicyType = "always"
