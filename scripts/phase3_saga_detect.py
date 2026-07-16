@@ -192,13 +192,41 @@ _GIT_ENV = {
     "GIT_ASKPASS": "true",
     "GCM_INTERACTIVE": "never",
 }
+_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
+# Polite pacing to avoid GitHub's abuse detection during bulk cloning. Unauthenticated
+# clones from one IP get throttled after ~1k clones; authenticated clones (token in the
+# URL) have a far higher ceiling. Tunable via env.
+_CLONE_DELAY = float(os.getenv("CLONE_DELAY", "0.4"))   # seconds between clones
+_CLONE_RETRIES = int(os.getenv("CLONE_RETRIES", "3"))
+
+
+def _auth_url(url):
+    """Inject the token so clones are authenticated (higher rate ceiling)."""
+    if _TOKEN and url.startswith("https://github.com/"):
+        return url.replace("https://github.com/",
+                           f"https://x-access-token:{_TOKEN}@github.com/", 1)
+    return url
 
 
 def _blobless_clone(url, dest):
-    subprocess.run(["git", "-c", "credential.helper=", "clone",
-                    "--filter=blob:none", "--single-branch", "--quiet", url, dest],
-                   check=True, timeout=600, env=_GIT_ENV,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    """Clone with retry + exponential backoff. Raises CalledProcessError if all
+    attempts fail (caught by the caller and logged as SKIP)."""
+    import time
+    curl = _auth_url(url)
+    last = None
+    for attempt in range(_CLONE_RETRIES):
+        try:
+            subprocess.run(["git", "-c", "credential.helper=", "clone",
+                            "--filter=blob:none", "--single-branch", "--quiet", curl, dest],
+                           check=True, timeout=600, env=_GIT_ENV,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(_CLONE_DELAY)  # pace successful clones
+            return
+        except subprocess.CalledProcessError as e:
+            last = e
+            shutil.rmtree(dest, ignore_errors=True)  # clean partial clone before retry
+            time.sleep(min(2 ** attempt * 3, 30))    # 3s, 6s, 12s ... backoff on throttle
+    raise last
 
 
 def mine_repo(row, workdir, max_commits=0):
