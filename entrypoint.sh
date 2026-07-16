@@ -13,7 +13,11 @@
 #   RUN_JOB=mine             → python -m src.main           (Phase 1 mining)
 #   RUN_JOB=phase2           → Phase 2 validation + Stage B (language gate)
 #   RUN_JOB=phase2-stage-a   → Phase 2 validation, Stage A only (no API)
+#   RUN_JOB=phase3           → Phase 3 SAGA detection over the validated corpus
 #   RUN_JOB unset / idle     → container just idles, ready to inspect/exec
+#
+# For manual running instead, leave RUN_JOB unset, open a shell, and run e.g.
+#   python run.py phase3
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -23,7 +27,8 @@ mkdir -p "$OUTPUT_DIR"
 SENTINEL="$OUTPUT_DIR/.completed_${JOB}"
 
 idle() {
-  echo "[entrypoint] idling. Set RUN_JOB=mine|phase2|phase2-stage-a and redeploy (or exec a runner) to start a job."
+  echo "[entrypoint] idling. Set RUN_JOB=mine|phase2|phase2-stage-a|phase3 and redeploy,"
+  echo "[entrypoint] or leave RUN_JOB unset and run manually, e.g.  python run.py phase3"
   exec tail -f /dev/null
 }
 
@@ -40,11 +45,11 @@ fi
 
 echo "[entrypoint] starting job: $JOB"
 case "$JOB" in
-  mine)            python -m src.main ;;
-  phase2)          python scripts/phase2_validation.py --stage-b ;;
-  phase2-stage-a)  python scripts/phase2_validation.py ;;
+  mine|phase2|phase2-stage-a|phase3)
+    # Delegate to run.py so job definitions (and phase3 env paths) live in one place.
+    python run.py "$JOB" ;;
   *)
-    echo "[entrypoint] unknown RUN_JOB='$JOB' (expected: mine | phase2 | phase2-stage-a)"
+    echo "[entrypoint] unknown RUN_JOB='$JOB' (expected: mine | phase2 | phase2-stage-a | phase3)"
     idle
     ;;
 esac

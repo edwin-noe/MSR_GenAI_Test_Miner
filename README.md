@@ -149,7 +149,15 @@ Leave `RUN_JOB` unset. Redeploy to wake the container, open a shell, and run:
 python run.py phase2          # Phase 2 validation + Stage B (README language gate)
 python run.py mine            # Phase 1 mining
 python run.py phase2-stage-a  # Phase 2 Stage A only (no API)
+python run.py phase3          # Phase 3 SAGA detection over the validated corpus
 ```
+
+`phase3` reads `output/phase2/validated_repos.csv` and writes `output/phase3/`. It clones
+each repo blobless, detects Self-Admitted GenAI Usage (commit messages, trailers, README,
+config files), then discards the clone (peak disk ≈ one repo). It is **checkpointed and
+resumable**: skips catalog/awesome-list repos before cloning, caps commit-history traversal
+(`--max-commits`, default 25 000), and writes results per repo — rerun after a restart to
+continue from where it stopped. Needs no GitHub token (uses `git clone`, not the API).
 
 For a long job that should survive your shell disconnecting, run it detached:
 
@@ -176,12 +184,15 @@ then deploy/restart:
 | `mine`           | `python -m src.main` (Phase 1 mining) |
 | `phase2`         | Phase 2 validation **+ Stage B** README language gate |
 | `phase2-stage-a` | Phase 2 validation, Stage A only (no API calls) |
+| `phase3`         | Phase 3 SAGA detection over the validated corpus |
 
 Other variables:
-- `GITHUB_TOKEN` — required for `mine` and `phase2` (Stage B). **Never commit it.**
+- `GITHUB_TOKEN` — required for `mine` and `phase2` (Stage B). Not needed for `phase3`. **Never commit it.**
 - `FORCE_RERUN=1` — re-run a job whose completion sentinel already exists.
 - `PHASE1_CSV` — Phase 2 input (default `output/validated_repos.csv`, the miner's output).
 - `PHASE2_DIR` — Phase 2 output dir (default `output/phase2`).
+- `PHASE2_CSV` — Phase 3 input (default `output/phase2/validated_repos.csv`).
+- `PHASE3_DIR` — Phase 3 output dir (default `output/phase3`).
 
 **Rate limits are waited out, not failed.** When GitHub's quota is exhausted, both
 the miner and the Phase 2 Stage B fetcher sleep until the limit resets and then
