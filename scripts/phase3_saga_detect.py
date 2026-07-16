@@ -184,9 +184,20 @@ def _detect_in_text(text, artifact, repo_id, has_test_infra, date=None, provenan
     return out
 
 
+# Never let git prompt for credentials: repos deleted/made-private since mining
+# would otherwise hang the run waiting for a username/password. Fail fast instead.
+_GIT_ENV = {
+    **os.environ,
+    "GIT_TERMINAL_PROMPT": "0",
+    "GIT_ASKPASS": "true",
+    "GCM_INTERACTIVE": "never",
+}
+
+
 def _blobless_clone(url, dest):
-    subprocess.run(["git", "clone", "--filter=blob:none", "--single-branch", "--quiet", url, dest],
-                   check=True, timeout=600,
+    subprocess.run(["git", "-c", "credential.helper=", "clone",
+                    "--filter=blob:none", "--single-branch", "--quiet", url, dest],
+                   check=True, timeout=600, env=_GIT_ENV,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
