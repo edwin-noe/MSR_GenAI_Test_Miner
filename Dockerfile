@@ -4,6 +4,11 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
+# git is required by Phase 3 (blobless clones + PyDriller history traversal).
+# The slim base image does not include it.
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy requirements first for caching
 COPY requirements.txt .
 
